@@ -1,6 +1,7 @@
 import { Prisma, ReservationStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { CreateInput } from "@/lib/validators";
+import { formatDate, formatTime } from "@/lib/format";
 
 export class ConflictError extends Error {}
 export class ValidationError extends Error {}
@@ -23,8 +24,22 @@ export async function createReservation(input: CreateInput, userId: string) {
     });
   } catch (e) {
     const msg = String(e);
-    if (msg.includes("no_overlapping_reservations") || msg.includes("23P01"))
-      throw new ConflictError("This resource is already booked during that time");
+    if (msg.includes("no_overlapping_reservations") || msg.includes("23P01")) {
+      const clash = await prisma.reservation.findFirst({
+        where: {
+          resourceId,
+          status: "CONFIRMED",
+          startTime: { lt: endTime },
+          endTime: { gt: startTime },
+        },
+        orderBy: { startTime: "asc" },
+      });
+      throw new ConflictError(
+        clash
+          ? `${resource.name} is already booked ${formatTime(clash.startTime)}–${formatTime(clash.endTime)} on ${formatDate(clash.startTime)}. Please choose a different time.`
+          : `${resource.name} is already booked during that time.`
+      );
+    }
     throw e;
   }
 }
@@ -41,6 +56,7 @@ export async function cancelReservation(id: string, actor: Actor) {
 
 export type ReservationFilters = {
   resourceId?: string;
+  userId?: string;
   status?: ReservationStatus;
   date?: string; // YYYY-MM-DD in Sri Lanka time
   scope?: "upcoming" | "past";
@@ -49,6 +65,7 @@ export type ReservationFilters = {
 export async function listReservations(f: ReservationFilters = {}) {
   const and: Prisma.ReservationWhereInput[] = [];
   if (f.resourceId) and.push({ resourceId: f.resourceId });
+  if (f.userId) and.push({ userId: f.userId });
   if (f.status) and.push({ status: f.status });
   if (f.date) {
     const dayStart = new Date(`${f.date}T00:00:00+05:30`);

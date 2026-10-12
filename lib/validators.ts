@@ -18,3 +18,11 @@ export const resourceSchema = z.object({
   capacity: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().max(1000).optional()),
 });
 export type ResourceInput = z.infer<typeof resourceSchema>;
+
+export const bookingFormSchema = z.object({
+  resourceId: z.string().min(1, "Select a resource"),
+  title: z.string().trim().min(3, "Purpose must be at least 3 characters").max(120),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date"),
+  start: z.string().regex(/^\d{2}:\d{2}$/, "Choose a start time"),
+  end: z.string().regex(/^\d{2}:\d{2}$/, "Choose an end time"),
+});
