@@ -23,3 +23,8 @@ export function todayBounds(now = new Date()) {
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
   return { start, end };
 }
+
+/** YYYY-MM-DD for a Date, in Sri Lanka time. */
+export function toYmd(d: Date) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(d);
+}
