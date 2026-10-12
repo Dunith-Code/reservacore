@@ -175,3 +175,13 @@ describe("cancellation permissions", () => {
     expect(res.status).toBe("CANCELLED");
   });
 });
+
+  it("suggests free slots and other free resources when there is a conflict", async () => {
+    await book(roomId, 9, 11);
+    const err = await book(roomId, 9, 10, bob.id).catch((e) => e);
+
+    expect(err).toBeInstanceOf(ConflictError);
+    const s = (err as ConflictError).suggestions!;
+    expect(s.slots.length).toBeGreaterThan(0);
+    expect(s.resources.map((r) => r.name)).toContain("Other Room");
+  });

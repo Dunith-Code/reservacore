@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -12,11 +13,13 @@ const at = (days: number, hour: number) => {
 };
 
 async function main() {
+  const passwordHash = bcrypt.hashSync("Demo@1234", 10);
+
   const users = await Promise.all(
     [
-      { name: "Admin User", email: "admin@reservacore.dev", role: "ADMIN" as const },
-      { name: "Nimal Perera", email: "nimal@reservacore.dev", role: "USER" as const },
-      { name: "Sara Fernando", email: "sara@reservacore.dev", role: "USER" as const },
+      { name: "Admin User", email: "admin@reservacore.dev", role: "ADMIN" as const, passwordHash },
+      { name: "Nimal Perera", email: "nimal@reservacore.dev", role: "USER" as const, passwordHash },
+      { name: "Sara Fernando", email: "sara@reservacore.dev", role: "USER" as const, passwordHash },
     ].map((u) => prisma.user.upsert({ where: { email: u.email }, update: u, create: u }))
   );
 

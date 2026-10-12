@@ -1,19 +1,14 @@
-import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { readSessionUserId } from "@/lib/auth";
 import { ForbiddenError } from "@/lib/services/reservations";
 
-export const USER_COOKIE = "rc_user";
-
 export async function getCurrentUser() {
-  const id = (await cookies()).get(USER_COOKIE)?.value;
-  if (id) {
-    const user = await prisma.user.findUnique({ where: { id } });
-    if (user) return user;
-  }
-  // Fallback: first admin (enum order puts ADMIN first)
-  const fallback = await prisma.user.findFirst({ orderBy: { role: "asc" } });
-  if (!fallback) throw new Error("No users found. Run `npm run db:seed`.");
-  return fallback;
+  const id = await readSessionUserId();
+  if (!id) redirect("/login");
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) redirect("/login");
+  return user;
 }
 
 export async function requireAdmin() {

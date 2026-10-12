@@ -10,10 +10,12 @@ import {
   ConflictError,
   ForbiddenError,
   ValidationError,
+  type Suggestions,
 } from "@/lib/services/reservations";
 
 export type BookingState = {
   error?: string;
+  suggestions?: Suggestions;
   fieldErrors?: Record<string, string[] | undefined>;
   values?: { resourceId: string; title: string; date: string; start: string; end: string };
 };
@@ -43,8 +45,8 @@ export async function createReservationAction(
   try {
     await createReservation({ resourceId, title, startTime, endTime }, user.id);
   } catch (e) {
-    if (e instanceof ConflictError || e instanceof ValidationError)
-      return { error: e.message, values };
+    if (e instanceof ConflictError) return { error: e.message, suggestions: e.suggestions, values };
+    if (e instanceof ValidationError) return { error: e.message, values };
     throw e;
   }
 
