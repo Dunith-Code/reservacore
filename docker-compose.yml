@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: reservacore-db
+    environment:
+      POSTGRES_USER: reservacore
+      POSTGRES_PASSWORD: reservacore
+      POSTGRES_DB: reservacore
+    ports:
+      - "5433:5432"
+    volumes:
+      - reservacore_data:/var/lib/postgresql/data
+
+volumes:
+  reservacore_data:
