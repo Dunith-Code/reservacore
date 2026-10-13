@@ -2,8 +2,9 @@
 
 A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles). It replaces informal scheduling with a single source of truth and **guarantees no double-bookings**, even when two people book at the same instant.
 
-- 🎥 **Demo video:** [link]
+- 🎥 **Demo video:** [Demo Video]
 - 📘 **Case study (business problem, interpretation, trade-offs):** [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
+- 🗂️ **ER diagram:** [[ER Diagram](https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing)]
 
 ---
 
