@@ -28,3 +28,13 @@ export function todayBounds(now = new Date()) {
 export function toYmd(d: Date) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(d);
 }
+
+/** Minutes since midnight, in Sri Lanka time. */
+export function minutesOfDay(d: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(d);
+  const h = Number(parts.find((p) => p.type === "hour")!.value) % 24;
+  const m = Number(parts.find((p) => p.type === "minute")!.value);
+  return h * 60 + m;
+}

@@ -26,3 +26,5 @@ export const bookingFormSchema = z.object({
   start: z.string().regex(/^\d{2}:\d{2}$/, "Choose a start time"),
   end: z.string().regex(/^\d{2}:\d{2}$/, "Choose an end time"),
 });
+
+export const rescheduleFormSchema = bookingFormSchema.pick({ date: true, start: true, end: true });

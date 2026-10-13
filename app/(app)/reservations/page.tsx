@@ -20,7 +20,7 @@ export default async function ReservationsPage({
 }: {
   searchParams: Promise<{
     scope?: string; resourceId?: string; date?: string;
-    status?: string; mine?: string; created?: string;
+    status?: string; mine?: string; created?: string; updated?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -55,9 +55,9 @@ export default async function ReservationsPage({
         </Button>
       </div>
 
-      {sp.created === "1" && (
+        {sp.updated === "1" && (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          Reservation confirmed.
+          Reservation rescheduled.
         </p>
       )}
 
@@ -100,7 +100,7 @@ export default async function ReservationsPage({
                   <TableHead>Purpose</TableHead>
                   <TableHead>Booked by</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-24" />
+                  <TableHead className="w-44" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -122,7 +122,16 @@ export default async function ReservationsPage({
                       <TableCell>
                         <StatusBadge status={r.status} startTime={r.startTime} endTime={r.endTime} />
                       </TableCell>
-                      <TableCell>{canCancel && <CancelButton id={r.id} />}</TableCell>
+                      <TableCell>
+                      {canCancel && (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/reservations/${r.id}/edit`}>Reschedule</Link>
+                          </Button>
+                          <CancelButton id={r.id} />
+                        </div>
+                      )}
+                    </TableCell>
                     </TableRow>
                   );
                 })}

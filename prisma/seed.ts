@@ -43,7 +43,7 @@ async function main() {
       { resourceId: byName["Boardroom A"], userId: users[2].id, title: "Client review", startTime: at(1, 9), endTime: at(1, 11) },
       { resourceId: byName["Huddle Room 1"], userId: users[2].id, title: "1:1 catch-up", startTime: at(1, 10), endTime: at(1, 11) },
       { resourceId: byName["Projector P-100"], userId: users[1].id, title: "Team demo", startTime: at(2, 13), endTime: at(2, 15) },
-      { resourceId: byName["Company Van"], userId: users[0].id, title: "Site visit", startTime: at(3, 8), endTime: at(3, 17) },
+      { resourceId: byName["Company Van"], userId: users[0].id, title: "Site visit", startTime: at(3, 8), endTime: at(3, 16) },
       { resourceId: byName["Training Hall"], userId: users[1].id, title: "Onboarding session", startTime: at(-2, 10), endTime: at(-2, 12) },
       { resourceId: byName["Boardroom A"], userId: users[1].id, title: "Cancelled workshop", startTime: at(1, 9), endTime: at(1, 10), status: "CANCELLED" },
     ],

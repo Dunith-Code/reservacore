@@ -1,7 +1,8 @@
 import { Prisma, ReservationStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { CreateInput } from "@/lib/validators";
-import { formatDate, formatTime, toYmd } from "@/lib/format";
+import { formatDate, formatTime, minutesOfDay, toYmd } from "@/lib/format";
+import { BOOKING_RULES, CLOSE_TIME, OPEN_TIME } from "@/lib/rules";
 
 export type Suggestions = {
   slots: { date: string; start: string; end: string }[];
@@ -20,30 +21,51 @@ export class ValidationError extends Error {}
 export class ForbiddenError extends Error {}
 
 type Actor = { id: string; role: Role };
+type ResourceRef = { id: string; name: string; type: string };
 
 const STEP_MS = 15 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
-const WINDOW_FROM_H = 6;  // suggestions are limited to 06:00-22:00 Sri Lanka time
-const WINDOW_TO_H = 22;
+
+/** Operating hours and maximum length (see lib/rules.ts). */
+function assertBookingRules(startTime: Date, endTime: Date) {
+  if (endTime.getTime() - startTime.getTime() > BOOKING_RULES.maxDurationHours * HOUR_MS)
+    throw new ValidationError(`Bookings can be at most ${BOOKING_RULES.maxDurationHours} hours long`);
+
+  const sameDay = toYmd(startTime) === toYmd(endTime);
+  if (
+    !sameDay ||
+    minutesOfDay(startTime) < BOOKING_RULES.openHour * 60 ||
+    minutesOfDay(endTime) > BOOKING_RULES.closeHour * 60
+  )
+    throw new ValidationError(`Bookings must be between ${OPEN_TIME} and ${CLOSE_TIME} on a single day`);
+}
+
+function assertValidTimes(startTime: Date, endTime: Date) {
+  if (endTime <= startTime) throw new ValidationError("End time must be after start time");
+  if (startTime < new Date()) throw new ValidationError("Cannot book in the past");
+  assertBookingRules(startTime, endTime);
+}
 
 /** Nearest free slots (same duration) on this resource that day, plus other free resources of the same type. */
 export async function suggestAlternatives(
   resource: { id: string; type: string },
   startTime: Date,
-  endTime: Date
+  endTime: Date,
+  excludeReservationId?: string
 ): Promise<Suggestions> {
   const duration = endTime.getTime() - startTime.getTime();
   const date = toYmd(startTime);
   const dayStart = new Date(`${date}T00:00:00+05:30`).getTime();
-  const windowStart = dayStart + WINDOW_FROM_H * HOUR_MS;
-  const windowEnd = dayStart + WINDOW_TO_H * HOUR_MS;
+  const windowStart = dayStart + BOOKING_RULES.openHour * HOUR_MS;
+  const windowEnd = dayStart + BOOKING_RULES.closeHour * HOUR_MS;
   const now = Date.now();
 
   const [busy, others] = await Promise.all([
     prisma.reservation.findMany({
       where: {
         resourceId: resource.id,
-        status: "CONFIRMED",
+        status: "CONFIRMED" as const,
+        ...(excludeReservationId ? { id: { not: excludeReservationId } } : {}),
         startTime: { lt: new Date(windowEnd) },
         endTime: { gt: new Date(windowStart) },
       },
@@ -55,7 +77,7 @@ export async function suggestAlternatives(
         isActive: true,
         id: { not: resource.id },
         reservations: {
-          none: { status: "CONFIRMED", startTime: { lt: endTime }, endTime: { gt: startTime } },
+          none: { status: "CONFIRMED" as const, startTime: { lt: endTime }, endTime: { gt: startTime } },
         },
       },
       select: { id: true, name: true },
@@ -93,10 +115,36 @@ export async function suggestAlternatives(
   };
 }
 
+/** Turns a database exclusion-constraint violation into a friendly ConflictError; other errors pass through. */
+async function asConflict(
+  e: unknown,
+  resource: ResourceRef,
+  startTime: Date,
+  endTime: Date,
+  excludeReservationId?: string
+): Promise<unknown> {
+  const msg = String(e);
+  if (!(msg.includes("no_overlapping_reservations") || msg.includes("23P01"))) return e;
+
+  const clash = await prisma.reservation.findFirst({
+    where: {
+      resourceId: resource.id,
+      status: "CONFIRMED" as const,
+      ...(excludeReservationId ? { id: { not: excludeReservationId } } : {}),
+      startTime: { lt: endTime },
+      endTime: { gt: startTime },
+    },
+    orderBy: { startTime: "asc" },
+  });
+  const message = clash
+    ? `${resource.name} is already booked ${formatTime(clash.startTime)}–${formatTime(clash.endTime)} on ${formatDate(clash.startTime)}.`
+    : `${resource.name} is already booked during that time.`;
+  return new ConflictError(message, await suggestAlternatives(resource, startTime, endTime, excludeReservationId));
+}
+
 export async function createReservation(input: CreateInput, userId: string) {
   const { resourceId, title, startTime, endTime } = input;
-  if (endTime <= startTime) throw new ValidationError("End time must be after start time");
-  if (startTime < new Date()) throw new ValidationError("Cannot book in the past");
+  assertValidTimes(startTime, endTime);
 
   const resource = await prisma.resource.findUnique({ where: { id: resourceId } });
   if (!resource || !resource.isActive)
@@ -107,23 +155,35 @@ export async function createReservation(input: CreateInput, userId: string) {
       data: { resourceId, userId, title, startTime, endTime },
     });
   } catch (e) {
-    const msg = String(e);
-    if (msg.includes("no_overlapping_reservations") || msg.includes("23P01")) {
-      const clash = await prisma.reservation.findFirst({
-        where: {
-          resourceId,
-          status: "CONFIRMED",
-          startTime: { lt: endTime },
-          endTime: { gt: startTime },
-        },
-        orderBy: { startTime: "asc" },
-      });
-      const message = clash
-        ? `${resource.name} is already booked ${formatTime(clash.startTime)}–${formatTime(clash.endTime)} on ${formatDate(clash.startTime)}.`
-        : `${resource.name} is already booked during that time.`;
-      throw new ConflictError(message, await suggestAlternatives(resource, startTime, endTime));
-    }
-    throw e;
+    throw await asConflict(e, resource, startTime, endTime);
+  }
+}
+
+export async function rescheduleReservation(
+  id: string,
+  actor: Actor,
+  times: { startTime: Date; endTime: Date }
+) {
+  const { startTime, endTime } = times;
+  const reservation = await prisma.reservation.findUnique({
+    where: { id },
+    include: { resource: true },
+  });
+  if (!reservation) throw new ValidationError("Reservation not found");
+  if (reservation.userId !== actor.id && actor.role !== "ADMIN")
+    throw new ForbiddenError("You can only change your own reservations");
+  if (reservation.status === "CANCELLED")
+    throw new ValidationError("Cancelled reservations can't be changed");
+  if (reservation.endTime < new Date())
+    throw new ValidationError("Past reservations can't be changed");
+  if (!reservation.resource.isActive)
+    throw new ValidationError("Resource is not available for booking");
+  assertValidTimes(startTime, endTime);
+
+  try {
+    return await prisma.reservation.update({ where: { id }, data: { startTime, endTime } });
+  } catch (e) {
+    throw await asConflict(e, reservation.resource, startTime, endTime, id);
   }
 }
 

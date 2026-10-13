@@ -26,6 +26,8 @@ A centralized resource reservation system for shared facilities and equipment (m
 - 🚫 **Conflict prevention:** overlapping bookings are rejected by PostgreSQL itself
 - 💡 **Smart alternatives:** when a slot is taken, the app suggests the nearest free slots and other free resources of the same type
 - 🔐 **Authentication and roles:** email and password sign-in, with admin and member permissions enforced on the server
+- ✏️ **Reschedule in place:** move a booking to another time without cancelling; the same conflict protection and alternatives apply
+- 🕘 **Booking rules:** bookings run 06:00-22:00 on a single day and last up to 8 hours
 
 ## 🧰 Tech stack
 

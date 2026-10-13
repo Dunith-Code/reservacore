@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import {
   cancelReservation,
   createReservation,
+  rescheduleReservation,
   ConflictError,
   ForbiddenError,
   ValidationError,
@@ -11,7 +12,7 @@ import {
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
-/** A time slot `dayOffset` days ahead, from `startHour` to `endHour` (UTC). */
+/** A time slot `dayOffset` days ahead, from `startHour` to `endHour` (UTC). Sri Lanka time is UTC+5:30. */
 function slot(startHour: number, endHour: number, dayOffset = 7) {
   const base = new Date();
   base.setUTCHours(0, 0, 0, 0);
@@ -94,6 +95,16 @@ describe("conflict prevention", () => {
     await book(roomId, 9, 11);
     await expect(book(roomId, 10, 12, bob.id)).rejects.toThrow(/already booked/);
   });
+
+  it("suggests free slots and other free resources when there is a conflict", async () => {
+    await book(roomId, 9, 11);
+    const err = await book(roomId, 9, 10, bob.id).catch((e) => e);
+
+    expect(err).toBeInstanceOf(ConflictError);
+    const s = (err as ConflictError).suggestions!;
+    expect(s.slots.length).toBeGreaterThan(0);
+    expect(s.resources.map((r) => r.name)).toContain("Other Room");
+  });
 });
 
 describe("validation rules", () => {
@@ -111,6 +122,24 @@ describe("validation rules", () => {
 
   it("rejects inactive resources", async () => {
     await expect(book(inactiveId, 9, 10)).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe("booking rules", () => {
+  it("rejects bookings longer than the maximum duration", async () => {
+    await expect(book(roomId, 1, 11)).rejects.toBeInstanceOf(ValidationError); // 06:30-16:30 = 10h
+  });
+
+  it("accepts a booking exactly at the maximum duration", async () => {
+    await expect(book(roomId, 1, 9)).resolves.toBeTruthy(); // 06:30-14:30 = 8h
+  });
+
+  it("rejects bookings that start before opening time", async () => {
+    await expect(book(roomId, 0, 1)).rejects.toBeInstanceOf(ValidationError); // 05:30-06:30
+  });
+
+  it("rejects bookings that end after closing time", async () => {
+    await expect(book(roomId, 16, 17)).rejects.toBeInstanceOf(ValidationError); // 21:30-22:30
   });
 });
 
@@ -176,12 +205,41 @@ describe("cancellation permissions", () => {
   });
 });
 
-  it("suggests free slots and other free resources when there is a conflict", async () => {
-    await book(roomId, 9, 11);
-    const err = await book(roomId, 9, 10, bob.id).catch((e) => e);
+describe("rescheduling", () => {
+  it("moves a booking to a free slot", async () => {
+    const r = await book(roomId, 9, 10);
+    const updated = await rescheduleReservation(r.id, alice, slot(11, 12));
+    expect(updated.startTime).toEqual(slot(11, 12).startTime);
+  });
+
+  it("lets a booking overlap its own previous time", async () => {
+    const r = await book(roomId, 9, 11);
+    await expect(rescheduleReservation(r.id, alice, slot(10, 12))).resolves.toBeTruthy();
+  });
+
+  it("rejects moving onto another booking, with suggestions", async () => {
+    await book(roomId, 9, 11, bob.id);
+    const r = await book(roomId, 12, 13);
+    const err = await rescheduleReservation(r.id, alice, slot(10, 12)).catch((e) => e);
 
     expect(err).toBeInstanceOf(ConflictError);
-    const s = (err as ConflictError).suggestions!;
-    expect(s.slots.length).toBeGreaterThan(0);
-    expect(s.resources.map((r) => r.name)).toContain("Other Room");
+    expect((err as ConflictError).suggestions!.slots.length).toBeGreaterThan(0);
   });
+
+  it("blocks other users but allows an admin", async () => {
+    const r = await book(roomId, 9, 10);
+    await expect(rescheduleReservation(r.id, bob, slot(11, 12))).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(rescheduleReservation(r.id, admin, slot(11, 12))).resolves.toBeTruthy();
+  });
+
+  it("rejects changing a cancelled booking", async () => {
+    const r = await book(roomId, 9, 10);
+    await cancelReservation(r.id, alice);
+    await expect(rescheduleReservation(r.id, alice, slot(11, 12))).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("applies the same booking rules when rescheduling", async () => {
+    const r = await book(roomId, 9, 10);
+    await expect(rescheduleReservation(r.id, alice, slot(1, 11))).rejects.toBeInstanceOf(ValidationError);
+  });
+});
