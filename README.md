@@ -124,7 +124,7 @@ lib/
 components/          UI components
 prisma/              schema, migrations, seed
 tests/               Vitest suite
-docs/                UML diagrams
+docs/                case study and diagrams
 ```
 
 Pages and Server Actions stay thin. Business rules (validation, conflict handling, permissions, alternatives) live in `lib/services`, so they are testable without the UI.
