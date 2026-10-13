@@ -1,21 +1,28 @@
 # 📐 ReservaCore Diagrams
 
-## 1. Use case diagram
+## 🗂️ Entity relationship diagram
+![ER diagram](diagrams/er.png)
+
+Three entities. The overlap rule is enforced by a PostgreSQL exclusion constraint on `Reservation`.
+
+---
+
+## 👥 Use case diagram
 ![Use case diagram](diagrams/use_case.png)
 
 ---
 
-## 2. Class diagram (domain model and service layer)
-![Use case diagram](diagrams/class.png)
+## 🧱 Class diagram
+![Class diagram](diagrams/class.png)
 
 ---
 
-## 3. Sequence diagram: creating a reservation (including the conflict path)
-![Use case diagram](diagrams/sequence.png)
+## 🔄 Sequence diagram: creating a reservation (including the conflict path)
+![Sequence diagram](diagrams/sequence.png)
 
 ---
 
-## 4. Deployment diagram (local development environment)
-![Use case diagram](diagrams/deployment.png)
+## 🚢 Deployment diagram
+![Deployment diagram](diagrams/deployment.png)
 
 ---
