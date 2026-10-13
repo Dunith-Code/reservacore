@@ -3,8 +3,18 @@
 A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles). It replaces informal scheduling with a single source of truth and **guarantees no double-bookings**, even when two people book at the same instant.
 
 - 🎥 **Demo video:** [link]
-- 🗂️ **ER diagram:** [link]
-- 📐 **UML diagrams (use case, class, sequence, deployment):** [docs/diagrams.md](docs/diagrams.md)
+- 📘 **Case study (business problem, interpretation, trade-offs):** [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
+
+---
+
+## 📐 Diagrams
+- **ER diagram**
+
+![ER diagram](docs/diagrams/er.png)
+
+- **UML diagrams (use case, class, sequence, deployment):** [docs/diagrams.md](docs/diagrams.md)
+
+---
 
 ## ✨ Features
 
@@ -21,10 +31,14 @@ A centralized resource reservation system for shared facilities and equipment (m
 
 Next.js 16 (App Router) · TypeScript · PostgreSQL 16 · Prisma 6 · Tailwind CSS v4 · shadcn/ui · Zod · jose + bcryptjs · Vitest
 
-## ✅ Prerequisites
+## 📝 Prerequisites
 
 - Node.js 22 or newer
 - Docker Desktop (for PostgreSQL), or any local PostgreSQL 16 instance
+
+> Don't have Docker? Any PostgreSQL 16 works. Create a database, set `DATABASE_URL` in `.env`, then continue from `npx prisma migrate deploy`.
+
+---
 
 ## 🚀 Getting started
 
@@ -48,12 +62,16 @@ npm run db:seed             # demo users, resources and reservations
 npm run dev                 # http://localhost:3000
 ```
 
+---
+
 ### ⚙️ Environment variables
 
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string (the default in `.env.example` matches `docker-compose.yml`) |
 | `AUTH_SECRET` | Secret used to sign session cookies (32+ characters) |
+
+---
 
 ### 🧾 Scripts
 
@@ -65,6 +83,8 @@ npm run dev                 # http://localhost:3000
 | `npm test` | Test suite (needs the test database, see below) |
 | `npm run lint` | Lint |
 
+---
+
 ## 🔑 Demo accounts
 
 All demo accounts use the password **`Demo@1234`** (demo data only).
@@ -75,6 +95,8 @@ All demo accounts use the password **`Demo@1234`** (demo data only).
 | nimal@reservacore.dev | Member |
 | sara@reservacore.dev | Member |
 
+---
+
 ## 🔐 Authentication and authorization
 
 - Passwords are hashed with **bcrypt**; plain-text passwords are never stored.
@@ -83,6 +105,8 @@ All demo accounts use the password **`Demo@1234`** (demo data only).
 - **Roles are enforced on the server:** only admins can manage resources; only the booking owner or an admin can cancel a booking.
 - Login errors are generic ("Invalid email or password") and a dummy hash comparison keeps timing similar for unknown emails.
 - Server Actions use Next.js built-in origin checks, which together with SameSite cookies protect against CSRF.
+
+---
 
 ## 🏗️ Architecture
 
@@ -105,6 +129,8 @@ docs/                UML diagrams
 
 Pages and Server Actions stay thin. Business rules (validation, conflict handling, permissions, alternatives) live in `lib/services`, so they are testable without the UI.
 
+---
+
 ## 🗄️ Database design
 
 Three entities: **User**, **Resource**, **Reservation** (a resource has many reservations, a user has many reservations). See the ER diagram link above.
@@ -114,6 +140,8 @@ Three entities: **User**, **Resource**, **Reservation** (a resource has many res
 - 🔌 **Deactivate, don't delete:** inactive resources can't receive new bookings, but history is kept
 - 🌏 **`timestamptz` everywhere:** stored in UTC, displayed in Sri Lanka time (Asia/Colombo)
 - ⚡ Foreign keys, plus indexes on `(resourceId, startTime)` and `userId`
+
+---
 
 ## 🛡️ How double-booking is prevented
 
@@ -133,6 +161,8 @@ ALTER TABLE "Reservation" ADD CONSTRAINT no_overlapping_reservations
 - `CHECK ("endTime" > "startTime")` rejects invalid ranges
 - The service catches the database error and turns it into a clear message naming the clashing booking
 
+---
+
 ## 💡 Design highlights
 
 - **Correctness at the database level:** no code path, including future ones, can create a double booking
@@ -140,6 +170,8 @@ ALTER TABLE "Reservation" ADD CONSTRAINT no_overlapping_reservations
 - **Time zones handled deliberately:** form times are interpreted as Sri Lanka time (+05:30), stored as UTC
 - **Thin controllers, tested services:** rules live in one layer that the tests exercise directly
 - **Proof, not claims:** the suite includes tests that bypass the service and a test that fires 8 simultaneous requests for one slot
+
+---
 
 ## 🧪 Testing
 
@@ -158,12 +190,16 @@ npm test
 
 The test setup refuses to run unless the database name contains `test`.
 
+---
+
 ## ⚠️ Assumptions and limitations
 
 - Bookings are single-day ranges entered in Sri Lanka time; no recurrence, approvals or notifications
 - Editing a booking is done by cancelling and rebooking
 - No self-registration, password reset or login rate limiting (accounts are seeded)
 - Local development setup only; production deployment would need a managed PostgreSQL and a strong `AUTH_SECRET`
+
+---
 
 ## 🔮 Next steps
 
@@ -172,6 +208,4 @@ The test setup refuses to run unless the database name contains `test`.
 - Per-resource opening hours and maximum duration
 - Full calendar view and email notifications
 
-## 🤖 AI-assisted development
-
-I used AI assistance for scaffolding and review, as the assessment permits. I reviewed and tested the code and can explain every decision, especially the database constraint and the concurrency tests.
+---
