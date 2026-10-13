@@ -177,9 +177,7 @@ ALTER TABLE "Reservation" ADD CONSTRAINT no_overlapping_reservations
 
 ## 🧪 Testing
 
-21 automated tests cover overlap variants, back-to-back bookings, cancelled bookings freeing slots, alternatives on conflict, validation rules, database-level enforcement, concurrency, and cancellation permissions.
-
-Tests run against a separate database so they never touch your data:
+**31 automated tests** (Vitest) run against a separate PostgreSQL database so they never touch your data. They exercise the service layer and the real database constraints, with no mocks.
 
 ```bash
 docker exec reservacore-db psql -U reservacore -d reservacore -c "CREATE DATABASE reservacore_test;"
@@ -191,6 +189,65 @@ npm test
 ```
 
 The test setup refuses to run unless the database name contains `test`.
+
+<details>
+<summary><strong>📋 Automated test cases (31)</strong></summary>
+
+| Area | Test case | Expected result |
+|---|---|---|
+| Conflict prevention | Create a valid reservation | Created with status CONFIRMED |
+| Conflict prevention | Same slot as an existing booking | Rejected (conflict) |
+| Conflict prevention | Starts inside an existing booking | Rejected |
+| Conflict prevention | Ends inside an existing booking | Rejected |
+| Conflict prevention | Fully contained in an existing booking | Rejected |
+| Conflict prevention | Fully contains an existing booking | Rejected |
+| Conflict prevention | Back-to-back bookings (end equals next start) | Allowed |
+| Conflict prevention | Same time on a different resource | Allowed |
+| Conflict prevention | Book a slot after the earlier booking was cancelled | Allowed (cancelled bookings free the slot) |
+| Conflict prevention | Conflict error message | Names the clashing booking |
+| Conflict prevention | Conflict response | Includes free slots and other free resources |
+| Validation | End before start | Rejected |
+| Validation | Zero-length booking | Rejected |
+| Validation | Booking in the past | Rejected |
+| Validation | Inactive resource | Rejected |
+| Booking rules | Longer than 8 hours | Rejected |
+| Booking rules | Exactly 8 hours | Accepted |
+| Booking rules | Starts before 06:00 | Rejected |
+| Booking rules | Ends after 22:00 | Rejected |
+| Database level | Overlapping insert that bypasses the service | Rejected by the exclusion constraint |
+| Database level | Invalid time range that bypasses the service | Rejected by the CHECK constraint |
+| Concurrency | 8 simultaneous requests for the same slot | Exactly 1 succeeds, 7 get a conflict, 1 row stored |
+| Cancellation | Owner cancels | Status becomes CANCELLED |
+| Cancellation | Another member cancels | Forbidden |
+| Cancellation | Admin cancels anyone's booking | Allowed |
+| Rescheduling | Move to a free slot | Booking updated |
+| Rescheduling | Move to a time overlapping its own previous time | Allowed |
+| Rescheduling | Move onto another booking | Rejected with free-slot suggestions |
+| Rescheduling | Other member vs admin | Forbidden vs allowed |
+| Rescheduling | Reschedule a cancelled booking | Rejected |
+| Rescheduling | Reschedule violating the booking rules | Rejected |
+
+</details>
+
+<details>
+<summary><strong>🖱️ Manual test scenarios (UI and authentication)</strong></summary>
+
+The user interface and login flow are verified manually rather than by automated tests.
+
+| Scenario | Expected result |
+|---|---|
+| Open any page while signed out | Redirected to the login page |
+| Sign in with a wrong password or unknown email | Same generic error message |
+| Sign out, then use the browser Back button | Protected pages stay inaccessible |
+| Member opens `/resources/new` | Redirected away; no "Add resource" button |
+| Book an overlapping slot | Clash message plus one-click alternatives |
+| Click a suggested slot, then confirm | Form pre-filled; booking succeeds |
+| Cancel a booking, then rebook the same slot | Succeeds |
+| Reschedule a booking | Success message and updated time in the list |
+| Admin deactivates a resource | Hidden from the booking form; history kept |
+| Stop the database and reload a page | Friendly error page with a retry button |
+
+</details>
 
 ---
 
