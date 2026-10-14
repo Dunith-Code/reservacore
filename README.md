@@ -1,19 +1,14 @@
 # 🏢 ReservaCore
 
+![CI](https://github.com/<your-username>/reservacore/actions/workflows/ci.yml/badge.svg)
+
 A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles). It replaces informal scheduling with a single source of truth and **guarantees no double-bookings**, even when two people book at the same instant.
 
-- 🎥 **Demo video:** [Demo Video]
-- 📘 **Case study (business problem, interpretation, trade-offs):** [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
-- 🗂️ **ER diagram:** [[ER Diagram](https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing)]
-
----
-
-## 📐 Diagrams
-- **ER diagram**
-
-![ER diagram](docs/diagrams/er.png)
-
-- **UML diagrams (use case, class, sequence, deployment):** [docs/diagrams.md](docs/diagrams.md)
+- 🌐 **Live app:** [LIVE_URL](https://reservacore.vercel.app) (hosted on Vercel with Neon PostgreSQL; the first load can take a few seconds while the database wakes up)
+- 🎥 **Demo video:** <VIDEO_LINK>
+- 🗂️ **ER diagram (shareable link):** [ER_Diagram](https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing)
+- 📘 **Case study (problem, interpretation, trade-offs):** [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
+- 📐 **UML diagrams (use case, class, sequence, deployment):** [docs/diagrams.md](docs/diagrams.md)
 
 ---
 
@@ -23,16 +18,19 @@ A centralized resource reservation system for shared facilities and equipment (m
 - 🧰 **Resource management:** create, edit, deactivate and reactivate resources (admin only)
 - 🔎 **Search and filters:** resources by name, type and status; reservations by scope, resource, date, status and owner
 - 📅 **Reservations:** book, view upcoming and past bookings, cancel (owner or admin)
+- ✏️ **Reschedule in place:** move a booking to another time without cancelling; the same conflict protection applies
 - 🕒 **Availability timeline:** per-resource day view showing free and booked slots
 - 🚫 **Conflict prevention:** overlapping bookings are rejected by PostgreSQL itself
 - 💡 **Smart alternatives:** when a slot is taken, the app suggests the nearest free slots and other free resources of the same type
-- 🔐 **Authentication and roles:** email and password sign-in, with admin and member permissions enforced on the server
-- ✏️ **Reschedule in place:** move a booking to another time without cancelling; the same conflict protection and alternatives apply
 - 🕘 **Booking rules:** bookings run 06:00-22:00 on a single day and last up to 8 hours
+- 🔐 **Authentication and roles:** email and password sign-in, with admin and member permissions enforced on the server
+- 🧪 **Tested and automated:** 31 automated tests, plus a CI pipeline and continuous deployment
+
+---
 
 ## 🧰 Tech stack
 
-Next.js 16 (App Router) · TypeScript · PostgreSQL 16 · Prisma 6 · Tailwind CSS v4 · shadcn/ui · Zod · jose + bcryptjs · Vitest
+Next.js 16 (App Router) · TypeScript · PostgreSQL 16 · Prisma 6 · Tailwind CSS v4 · shadcn/ui · Zod · jose + bcryptjs · Vitest · Docker (local database) · GitHub Actions · Vercel + Neon
 
 ## 📝 Prerequisites
 
@@ -69,9 +67,14 @@ npm run dev                 # http://localhost:3000
 
 ### ⚙️ Environment variables
 
+```env
+DATABASE_URL="postgresql://reservacore:reservacore@localhost:5433/reservacore?schema=public"
+AUTH_SECRET="change-me-to-a-long-random-string-at-least-32-characters"
+```
+
 | Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL connection string (the default in `.env.example` matches `docker-compose.yml`) |
+| `DATABASE_URL` | PostgreSQL connection string (the default matches `docker-compose.yml`) |
 | `AUTH_SECRET` | Secret used to sign session cookies (32+ characters) |
 
 ---
@@ -82,9 +85,10 @@ npm run dev                 # http://localhost:3000
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` / `npm start` | Production build and server |
-| `npm run db:seed` | Reset and seed demo data (clears existing reservations) |
-| `npm test` | Test suite (needs the test database, see below) |
 | `npm run lint` | Lint |
+| `npm run typecheck` | TypeScript type-check |
+| `npm test` | Test suite (needs the test database, see Testing) |
+| `npm run db:seed` | Reset and seed demo data (clears existing reservations) |
 
 ---
 
@@ -102,12 +106,25 @@ All demo accounts use the password **`Demo@1234`** (demo data only).
 
 ## 🔐 Authentication and authorization
 
-- Passwords are hashed with **bcrypt**; plain-text passwords are never stored.
-- A successful login sets a **signed JWT** (HS256) in an **HttpOnly, SameSite=Lax** cookie that expires after 8 hours (`Secure` in production).
-- All pages and Server Actions resolve the current user from the session; unauthenticated requests are redirected to `/login`.
-- **Roles are enforced on the server:** only admins can manage resources; only the booking owner or an admin can cancel a booking.
-- Login errors are generic ("Invalid email or password") and a dummy hash comparison keeps timing similar for unknown emails.
-- Server Actions use Next.js built-in origin checks, which together with SameSite cookies protect against CSRF.
+- Passwords are hashed with **bcrypt**; plain-text passwords are never stored
+- A successful login sets a **signed JWT** (HS256) in an **HttpOnly, SameSite=Lax** cookie that expires after 8 hours (`Secure` in production)
+- Every page and Server Action resolves the current user from the session; unauthenticated requests are redirected to `/login`
+- **Roles are enforced on the server:** only admins manage resources; only the booking owner or an admin can reschedule or cancel a booking
+- Login errors are generic ("Invalid email or password"), and a dummy hash comparison keeps timing similar for unknown emails
+- Server Actions use Next.js built-in origin checks, which together with SameSite cookies protect against CSRF
+
+---
+
+## 🕘 Booking rules
+
+| Rule | Value |
+|---|---|
+| Opening hours | 06:00-22:00, Sri Lanka time |
+| Maximum length | 8 hours |
+| Span | A single day |
+| Past bookings | Not allowed |
+
+The rules are global constants in `lib/rules.ts`, enforced in the service layer for both new bookings and rescheduling.
 
 ---
 
@@ -115,34 +132,40 @@ All demo accounts use the password **`Demo@1234`** (demo data only).
 
 ```
 app/
-  (app)/             authenticated pages: dashboard, resources, reservations
+  (app)/             authenticated pages: dashboard, resources, reservations (list, new, reschedule)
   login/             sign-in page
   actions/           Server Actions (thin: authenticate, validate, call services)
 lib/
-  services/          business rules and data access
+  services/          business rules and data access (reservations, resources, dashboard)
   auth.ts            session creation and verification
   current-user.ts    current user resolution and admin guard
+  rules.ts           booking rule constants
   validators.ts      Zod schemas
   format.ts          Sri Lanka time helpers
+  db.ts              Prisma client
 components/          UI components
 prisma/              schema, migrations, seed
 tests/               Vitest suite
 docs/                case study and diagrams
+.github/workflows/   CI pipeline
+docker-compose.yml   local PostgreSQL
 ```
 
-Pages and Server Actions stay thin. Business rules (validation, conflict handling, permissions, alternatives) live in `lib/services`, so they are testable without the UI.
+Pages and Server Actions stay thin. Business rules (validation, booking rules, conflict handling, permissions, alternatives) live in `lib/services`, so they are testable without the UI.
 
 ---
 
 ## 🗄️ Database design
 
-Three entities: **User**, **Resource**, **Reservation** (a resource has many reservations, a user has many reservations). See the ER diagram link above.
+Three entities: **User**, **Resource**, **Reservation** (a resource has many reservations, a user has many reservations).
+
+![ER diagram](docs/diagrams/er.png)
 
 - 🔒 **Overlap prevention is enforced by PostgreSQL**, not only by application code
 - 🗃️ **Cancel, don't delete:** reservations have a `CONFIRMED` / `CANCELLED` status, so history is kept and cancelled bookings free the slot
 - 🔌 **Deactivate, don't delete:** inactive resources can't receive new bookings, but history is kept
-- 🌏 **`timestamptz` everywhere:** stored in UTC, displayed in Sri Lanka time (Asia/Colombo)
-- ⚡ Foreign keys, plus indexes on `(resourceId, startTime)` and `userId`
+- 🌏 **`timestamptz` everywhere:** stored in UTC, displayed in Sri Lanka time
+- ⚡ Foreign keys, plus indexes on `(resourceId, startTime)`, `userId` and `Resource.type`
 
 ---
 
@@ -162,17 +185,24 @@ ALTER TABLE "Reservation" ADD CONSTRAINT no_overlapping_reservations
 - Ranges are end-exclusive (`[start, end)`), so a booking may start exactly when another ends
 - Cancelled bookings are excluded, so they free the slot
 - `CHECK ("endTime" > "startTime")` rejects invalid ranges
-- The service catches the database error and turns it into a clear message naming the clashing booking
+- Rescheduling is an `UPDATE`, so the same constraint protects it
+- The service catches the database error and turns it into a clear message naming the clashing booking, plus alternatives
 
 ---
 
 ## 💡 Design highlights
 
 - **Correctness at the database level:** no code path, including future ones, can create a double booking
-- **Helpful failures:** a rejected booking offers the nearest free slots (same duration, same day, 06:00-22:00) and other free resources of the same type, as one-click pre-filled links
-- **Time zones handled deliberately:** form times are interpreted as Sri Lanka time (+05:30), stored as UTC
+- **Helpful failures:** a rejected booking offers the nearest free slots (same duration, same day) and other free resources of the same type as one-click pre-filled links
 - **Thin controllers, tested services:** rules live in one layer that the tests exercise directly
 - **Proof, not claims:** the suite includes tests that bypass the service and a test that fires 8 simultaneous requests for one slot
+- **Accountability:** every booking has an owner and a purpose; history is never deleted
+
+---
+
+## 🌏 Time zones
+
+Form times are interpreted as Sri Lanka time (UTC+05:30) and stored as UTC in `timestamptz` columns, so server time zones never matter. For example, a booking entered as 11:00 is stored as 05:30 UTC and displayed as 11:00 again.
 
 ---
 
@@ -252,20 +282,34 @@ The user interface and login flow are verified manually rather than by automated
 
 ---
 
+## 🔄 CI/CD
+
+- **CI (GitHub Actions):** on every push and pull request, the pipeline installs dependencies, applies the migrations to a PostgreSQL service container, lints, type-checks, runs the 31 tests, and builds the app
+- **CD (Vercel):** every push to `main` deploys to production, and pull requests get preview deployments
+- **Migrations** are applied manually with `npx prisma migrate deploy`, which keeps schema changes deliberate
+
+---
+
+## ☁️ Deployment
+
+Hosted on **Vercel** with a **Neon** PostgreSQL database. Configuration is two environment variables, `DATABASE_URL` and `AUTH_SECRET`, and a `postinstall` script (`prisma generate`). The database was prepared with `npx prisma migrate deploy` and `npm run db:seed`.
+
+---
+
 ## ⚠️ Assumptions and limitations
 
-- Bookings are single-day ranges entered in Sri Lanka time; no recurrence, approvals or notifications
-- Editing a booking is done by cancelling and rebooking
-- No self-registration, password reset or login rate limiting (accounts are seeded)
-- Local development setup only; production deployment would need a managed PostgreSQL and a strong `AUTH_SECRET`
+- Bookings are single-day ranges entered in Sri Lanka time; no recurrence, approval workflow or notifications
+- Opening hours and maximum duration are global rules, not per-resource settings
+- No self-registration, password reset or login rate limiting (accounts are seeded); an internal tool normally provisions accounts through an admin or company sign-in
+- The live demo database is shared and its seeded dates age over time
 
 ---
 
 ## 🔮 Next steps
 
-- Self-registration and password reset
-- Reschedule a booking in place
 - Per-resource opening hours and maximum duration
-- Full calendar view and email notifications
+- Self-registration or admin-created accounts, then password reset and login throttling
+- Full calendar view
+- Email or chat notifications
 
 ---
