@@ -8,7 +8,7 @@ A growing organization shares facilities and equipment (meeting rooms, projector
 
 ## 🎯 2. The real problem
 
-The three symptoms in the brief share one root cause: **there is no single source of truth for who has what, and when.** Each symptom follows from that:
+The three symptoms in the brief share one root cause: **there is no single source of truth for who has what, and when.**
 
 | Symptom | Root cause |
 |---|---|
@@ -16,7 +16,7 @@ The three symptoms in the brief share one root cause: **there is no single sourc
 | Overlapping reservations | Nothing checks a new request against existing ones, and two people can ask at the same moment |
 | Uncertainty about availability | There is no place to look; you have to ask someone |
 
-The brief adds that the solution must "remain reliable as day-to-day activities grow". I read this as a **correctness requirement under concurrent use**, not as a performance requirement.
+The brief adds that the solution must "remain reliable as day-to-day activities grow". I read this as a **correctness requirement under concurrent use**, not a performance requirement.
 
 ---
 
@@ -24,7 +24,7 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 
 | Stakeholder | Needs |
 |---|---|
-| Employees (members) | See what is free, book quickly, understand why a booking failed, cancel their own bookings |
+| Employees (members) | See what is free, book quickly, understand why a booking failed, change or cancel their own bookings |
 | Administrators | Maintain the resource catalogue, retire resources, step in when needed |
 | The organization | Trustworthy records, accountability (who booked what), no double-bookings |
 
@@ -35,10 +35,10 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 | The brief says | My interpretation | What I built |
 |---|---|---|
 | "organize its resources" | A catalogue with type, location, capacity and an active/inactive state | Resource management (admin), search and type filters |
-| "coordinate reservations" | A booking lifecycle with ownership and permissions | Create, view, cancel; members manage their own, admins any |
+| "coordinate reservations" | A booking lifecycle with ownership and permissions | Create, reschedule, cancel; members manage their own, admins any |
 | "clear understanding of usage and availability" | Answer "what is free?" and "what is coming?" at a glance | Dashboard, per-resource day timeline, reservation filters |
 | "overlapping reservations" | Make overlaps **impossible**, not just unlikely | PostgreSQL exclusion constraint |
-| "remain reliable as activities grow" | Safe under simultaneous requests; history preserved | Concurrency-safe booking, indexes, status-based cancellation, automated tests |
+| "remain reliable as activities grow" | Safe under simultaneous requests; history preserved; rules that keep data sane | Concurrency-safe booking, indexes, status-based cancellation, booking rules, automated tests |
 | "informal communication and manual records" | One system of record with accountability | Every booking is tied to a user and a purpose |
 
 ---
@@ -47,7 +47,7 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 
 The brief explicitly asks for a focused solution and for prioritization over unnecessary complexity.
 
-**Built:** resources, reservations, conflict prevention, availability, search and filters, dashboard, authentication with roles, helpful alternatives when a slot is taken.
+**Built:** resources, reservations, conflict prevention, availability, search and filters, dashboard, authentication with roles, alternatives when a slot is taken, rescheduling in place, global booking rules (hours and maximum duration), automated tests, CI and deployment.
 
 **Deliberately left out, and why:**
 
@@ -57,6 +57,7 @@ The brief explicitly asks for a focused solution and for prioritization over unn
 | Password reset and email notifications | Need an email service and secrets; not core to the scheduling problem |
 | Full calendar view | The day timeline already answers availability; a calendar adds cost without new capability |
 | Recurring bookings, approval workflows | Not in the scenario; each adds significant rules and edge cases |
+| Per-resource opening hours | Global rules cover the scenario; per-resource rules need a schema change and admin UI |
 
 ---
 
@@ -84,26 +85,29 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 | Authorization on the server | Hiding a button is not security |
 | Simple custom authentication (bcrypt, signed HttpOnly cookie) | Small and fully explainable; limits listed below |
 | Suggest alternatives on conflict | A rejection should lead to a next step, not a dead end |
+| Rescheduling as an `UPDATE` | The same constraint protects it, with no extra logic |
+| Global booking rules as constants | Cheap, testable, and explicit; easy to move into per-resource settings later |
 
 ---
 
 ## 🛠️ 7. Real-world operational challenges handled
 
 - **Simultaneous requests** for the same slot: exactly one succeeds
-- **Human error:** end before start, bookings in the past, inactive resources
+- **Human error:** end before start, bookings in the past, inactive resources, 12-hour bookings, after-hours bookings
 - **Back-to-back bookings:** a booking may start exactly when another ends
-- **Cancellations:** slots become available again immediately
-- **Permissions:** members can't cancel others' bookings or manage resources
+- **Cancellations and changes:** slots become available again immediately; rescheduling keeps the history
+- **Permissions:** members can't change others' bookings or manage resources
 - **Failure states:** an error page when the database is unreachable, empty states, validation messages
 
 ---
 
 ## ✔️ 8. Verification
 
-- 21 automated tests: overlap variants, back-to-back, cancellation, validation, permissions, alternatives on conflict
+- 31 automated tests: overlap variants, back-to-back, cancellation, validation, booking rules, permissions, alternatives, rescheduling
 - Tests that bypass the application layer to prove the database enforces the rule
 - A test firing 8 simultaneous requests at one slot (1 wins, 7 receive clean conflict errors)
-- Manual walkthrough of every user role
+- A CI pipeline that runs lint, type-check, the tests and the build on every push
+- Manual walkthrough of every user role, plus a time zone check (stored UTC, shown Sri Lanka time)
 
 ---
 
@@ -111,8 +115,7 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 
 | Limitation | Planned next step | Priority |
 |---|---|---|
-| No opening hours or maximum duration | Per-resource rules | High |
-| Editing means cancel and rebook | Reschedule in place (the constraint already protects it) | High |
+| Booking rules are global, not per resource | Per-resource opening hours and maximum duration | High |
 | No self-registration, password reset or login rate limiting | Admin-created accounts or SSO, then reset and throttling | Medium |
 | Day timeline only | Calendar view | Medium |
 | No notifications | Email or chat reminders | Low |
@@ -126,6 +129,7 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 | Chats and manual records | One system of record |
 | Overlaps found after the fact | Overlaps rejected at the database, with alternatives offered |
 | "Is the room free?" means asking around | Dashboard and timeline show it |
+| Changing a booking means starting over | Reschedule in place, with the same protection |
 | No record of who booked what | Every booking has an owner and a purpose |
 
 ---
