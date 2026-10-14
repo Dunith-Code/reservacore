@@ -31,9 +31,12 @@ jobs:
           --health-retries 10
 
     env:
-      # The database name must contain "test": the test setup refuses to run otherwise.
-      DATABASE_URL: postgresql://reservacore:reservacore@localhost:5432/reservacore_test?schema=public
+      DATABASE_URL: postgresql://reservacore:reservacore@127.0.0.1:5432/reservacore_test?schema=public
       AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      JWT_SECRET: ci-only-jwt-secret-ci-only-jwt-secret
+      CRON_SECRET: ci-only-cron-secret
+      NEXT_PUBLIC_WHATSAPP_NUMBER: "1234567890"
+      NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +49,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply migrations (includes the overlap constraint)
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Apply migrations
         run: npx prisma migrate deploy
+
+      - name: Generate Next.js types
+        run: npx next typegen
 
       - name: Lint
         run: npm run lint
