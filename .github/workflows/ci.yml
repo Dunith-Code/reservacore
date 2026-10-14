@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, type-check, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: reservacore
+          POSTGRES_PASSWORD: reservacore
+          POSTGRES_DB: reservacore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reservacore -d reservacore_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # The database name must contain "test": the test setup refuses to run otherwise.
+      DATABASE_URL: postgresql://reservacore:reservacore@localhost:5432/reservacore_test?schema=public
+      AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply migrations (includes the overlap constraint)
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
