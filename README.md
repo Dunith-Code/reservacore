@@ -1,6 +1,20 @@
 # 🏢 ReservaCore
 
-![CI](https://github.com/<your-username>/reservacore/actions/workflows/ci.yml/badge.svg)
+[![Live demo](https://img.shields.io/badge/live%20demo-Vercel-000000?logo=vercel&logoColor=white)](<https://reservacore.vercel.app>)
+[![Demo video](https://img.shields.io/badge/demo%20video-watch-FF0000?logo=youtube&logoColor=white)](<VIDEO_LINK>)
+[![ER diagram](https://img.shields.io/badge/ER%20diagram-view-4169E1)](<https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing>)
+[![Case study](https://img.shields.io/badge/case%20study-read-6D5CE8)](docs/CASE_STUDY.md)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-22-5FA04E?logo=nodedotjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-31%20passing-brightgreen)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?logo=vitest&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-Postgres-00E599)
 
 A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles). It replaces informal scheduling with a single source of truth and **guarantees no double-bookings**, even when two people book at the same instant.
 
