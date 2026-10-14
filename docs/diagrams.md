@@ -22,7 +22,13 @@ Three entities. The overlap rule is enforced by a PostgreSQL exclusion constrain
 
 ---
 
-## 🚢 Deployment diagram
-![Deployment diagram](diagrams/deployment.png)
+## 💻 Deployment diagram: local development
+![Local Deployment diagram](diagrams/deployment_local.png)
+
+---
+
+## 🚢 Deployment diagram: production
+
+![deployment_production](diagrams/deployment_production.png)
 
 ---
