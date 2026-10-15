@@ -6,24 +6,24 @@ A growing organization shares facilities and equipment (meeting rooms, projector
 
 ---
 
-## 🧭 My approach
+## 🧭 2. My approach
 
 The brief describes a business problem rather than a specification, so this project is as much about interpretation as implementation. My method was:
 
 1. Read the brief for symptoms and constraints, not for features
-2. Translate each phrase into a requirement (section 4)
-3. Prioritise the core and the hardest problem first
-4. Decide deliberately what to leave out (section 5)
-5. Compare options for the risky decisions (section 6)
-6. Verify with automated and manual tests, and document the limits (sections 8 and 9)
+2. Translate each phrase into a requirement (section 5)
+3. Prioritize the core and the hardest problem first
+4. Decide deliberately what to leave out (section 6)
+5. Compare options for the risky decisions (section 7)
+6. Verify with automated and manual tests, and document the limits (sections 9 and 10)
 
 ---
 
-## 🎯 2. What the symptoms have in common
+## 🎯 3. What the symptoms have in common
 
 The three symptoms in the brief point to one shared gap: **there is no single source of truth for who has what, and when.**
 
-| Symptom | Root cause |
+| Symptom | What is behind it |
 |---|---|
 | Scheduling confusion | Information lives in chats, memory and personal records |
 | Overlapping reservations | Nothing checks a new request against existing ones, and two people can ask at the same moment |
@@ -33,7 +33,7 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 
 ---
 
-## 👥 3. Stakeholders and what they need
+## 👥 4. Stakeholders and what they need
 
 | Stakeholder | Needs |
 |---|---|
@@ -43,7 +43,7 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 
 ---
 
-## 🧭 4. From the brief to requirements
+## 🔗 5. From the brief to requirements
 
 | The brief says | My interpretation | What I built |
 |---|---|---|
@@ -56,7 +56,7 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 
 ---
 
-## ✂️ 5. Scope decisions
+## ✂️ 6. Scope decisions
 
 The brief explicitly asks for a focused solution and for prioritization over unnecessary complexity.
 
@@ -74,7 +74,7 @@ The brief explicitly asks for a focused solution and for prioritization over unn
 
 ---
 
-## ⚖️ 6. Key design decisions and trade-offs
+## ⚖️ 7. Key design decisions and trade-offs
 
 **Preventing overlaps (the central decision)**
 
@@ -103,10 +103,10 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 
 ---
 
-## 🛠️ 7. Real-world operational challenges handled
+## 🛠️ 8. Real-world operational challenges handled
 
 - **Simultaneous requests** for the same slot: exactly one succeeds
-- **Human error:** end before start, bookings in the past, inactive resources, 12-hour bookings, after-hours bookings
+- **Human error:** end before start, bookings in the past, inactive resources, bookings longer than 8 hours, after-hours bookings
 - **Back-to-back bookings:** a booking may start exactly when another ends
 - **Cancellations and changes:** slots become available again immediately; rescheduling keeps the history
 - **Permissions:** members can't change others' bookings or manage resources
@@ -114,7 +114,7 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 
 ---
 
-## ✔️ 8. Verification
+## ✔️ 9. Verification
 
 - 31 automated tests: overlap variants, back-to-back, cancellation, validation, booking rules, permissions, alternatives, rescheduling
 - Tests that bypass the application layer to prove the database enforces the rule
@@ -124,7 +124,7 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 
 ---
 
-## ⚠️ 9. Limitations and next steps
+## ⚠️ 10. Limitations and next steps
 
 | Limitation | Planned next step | Priority |
 |---|---|---|
@@ -135,7 +135,7 @@ Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema
 
 ---
 
-## 🏁 10. Outcome
+## 🏁 11. Outcome
 
 | Before | After |
 |---|---|
