@@ -6,9 +6,22 @@ A growing organization shares facilities and equipment (meeting rooms, projector
 
 ---
 
-## 🎯 2. The real problem
+## 🧭 My approach
 
-The three symptoms in the brief share one root cause: **there is no single source of truth for who has what, and when.**
+The brief describes a business problem rather than a specification, so this project is as much about interpretation as implementation. My method was:
+
+1. Read the brief for symptoms and constraints, not for features
+2. Translate each phrase into a requirement (section 4)
+3. Prioritise the core and the hardest problem first
+4. Decide deliberately what to leave out (section 5)
+5. Compare options for the risky decisions (section 6)
+6. Verify with automated and manual tests, and document the limits (sections 8 and 9)
+
+---
+
+## 🎯 2. What the symptoms have in common
+
+The three symptoms in the brief point to one shared gap: **there is no single source of truth for who has what, and when.**
 
 | Symptom | Root cause |
 |---|---|
@@ -37,7 +50,7 @@ The brief adds that the solution must "remain reliable as day-to-day activities 
 | "organize its resources" | A catalogue with type, location, capacity and an active/inactive state | Resource management (admin), search and type filters |
 | "coordinate reservations" | A booking lifecycle with ownership and permissions | Create, reschedule, cancel; members manage their own, admins any |
 | "clear understanding of usage and availability" | Answer "what is free?" and "what is coming?" at a glance | Dashboard, per-resource day timeline, reservation filters |
-| "overlapping reservations" | Make overlaps **impossible**, not just unlikely | PostgreSQL exclusion constraint |
+| "overlapping reservations" | Prevent overlaps by design, rather than rely on people checking first | PostgreSQL exclusion constraint |
 | "remain reliable as activities grow" | Safe under simultaneous requests; history preserved; rules that keep data sane | Concurrency-safe booking, indexes, status-based cancellation, booking rules, automated tests |
 | "informal communication and manual records" | One system of record with accountability | Every booking is tied to a user and a purpose |
 
@@ -70,7 +83,7 @@ The brief explicitly asks for a focused solution and for prioritization over unn
 | Check, then insert | Simple, but two simultaneous requests can both pass the check |
 | Serializable transactions with retries | Correct, but every code path must remember to use it |
 | Locks per resource | Correct, but again relies on application discipline |
-| **Exclusion constraint (chosen)** | Atomic, index-backed, and impossible to bypass |
+| **Exclusion constraint (chosen)** | Atomic, index-backed, and enforced for every code path that writes to the table |
 
 Trade-off: it is PostgreSQL-specific and can't be expressed in the Prisma schema, so it lives in a raw SQL migration and is covered by tests that bypass the application layer.
 
