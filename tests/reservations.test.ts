@@ -12,6 +12,9 @@ import {
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
+// A dedicated type keeps these tests independent of any other resources in the database.
+const TEST_TYPE = "Unit Test Room";
+
 /** A time slot `dayOffset` days ahead, from `startHour` to `endHour` (UTC). Sri Lanka time is UTC+5:30. */
 function slot(startHour: number, endHour: number, dayOffset = 7) {
   const base = new Date();
@@ -33,8 +36,8 @@ beforeAll(async () => {
   const mkRes = (name: string, isActive = true) =>
     prisma.resource.upsert({
       where: { name },
-      update: { isActive },
-      create: { name, type: "Meeting Room", isActive },
+      update: { isActive, type: TEST_TYPE },
+      create: { name, type: TEST_TYPE, isActive },
     });
 
   alice = await mkUser("Alice", "alice@test.dev", "USER");
@@ -127,19 +130,19 @@ describe("validation rules", () => {
 
 describe("booking rules", () => {
   it("rejects bookings longer than the maximum duration", async () => {
-    await expect(book(roomId, 1, 11)).rejects.toBeInstanceOf(ValidationError); // 06:30-16:30 = 10h
+    await expect(book(roomId, 1, 11)).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("accepts a booking exactly at the maximum duration", async () => {
-    await expect(book(roomId, 1, 9)).resolves.toBeTruthy(); // 06:30-14:30 = 8h
+    await expect(book(roomId, 1, 9)).resolves.toBeTruthy();
   });
 
   it("rejects bookings that start before opening time", async () => {
-    await expect(book(roomId, 0, 1)).rejects.toBeInstanceOf(ValidationError); // 05:30-06:30
+    await expect(book(roomId, 0, 1)).rejects.toBeInstanceOf(ValidationError);
   });
 
   it("rejects bookings that end after closing time", async () => {
-    await expect(book(roomId, 16, 17)).rejects.toBeInstanceOf(ValidationError); // 21:30-22:30
+    await expect(book(roomId, 16, 17)).rejects.toBeInstanceOf(ValidationError);
   });
 });
 
