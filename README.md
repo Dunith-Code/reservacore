@@ -1,7 +1,7 @@
 # 🏢 ReservaCore: Resource Reservation Management System
 
 [![Live demo](https://img.shields.io/badge/live%20demo-Vercel-000000?logo=vercel&logoColor=white)](<https://reservacore.vercel.app>)
-[![Demo video](https://img.shields.io/badge/demo%20video-watch-FF0000?logo=youtube&logoColor=white)](<VIDEO_LINK>)
+[![Demo video](https://img.shields.io/badge/demo%20video-watch-FF0000?logo=youtube&logoColor=white)](<https://drive.google.com/file/d/11UiXAcn6dnonFwpP0ETxnRFwh2wdrM6a/view?usp=sharing>)
 [![ER diagram](https://img.shields.io/badge/ER%20diagram-view-4169E1)](<https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing>)
 [![Case study](https://img.shields.io/badge/case%20study-read-6D5CE8)](docs/CASE_STUDY.md)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
@@ -19,7 +19,7 @@
 A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles), built as my response to a business scenario rather than a detailed specification. It prevents double-bookings at the database level, even when two people book at the same instant, and gives everyone a clear view of what is available.
 
 - 🌐 **Live app:** [reservacore.vercel.app](https://reservacore.vercel.app) (hosted on Vercel with Neon PostgreSQL; the first load can take a few seconds while the database wakes up)
-- 🎥 **Demo video:** <!-- [Google Drive] -->
+- 🎥 **Demo video:** [Google Drive](https://drive.google.com/file/d/11UiXAcn6dnonFwpP0ETxnRFwh2wdrM6a/view?usp=sharing)
 - 🗂️ **ER diagram (shareable link):** [ER Diagram](https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing)
 - 📘 **Case study (problem, interpretation, trade-offs):** [CASE STUDY](docs/CASE_STUDY.md)
 - 📐 **UML diagrams (use case, class, sequence, deployment):** [Diagrams](docs/diagrams.md)
@@ -37,7 +37,7 @@ The brief describes a problem, not a specification, so I started by turning its 
 5. **Build and test the risky parts:** a database-level constraint, plus tests that bypass the application layer and fire simultaneous requests
 6. **Verify, document and be honest about limits:** manual walkthrough, CI, case study, diagrams and a limitations list
 
-Details and trade-offs: [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
+Details and trade-offs: [CASE STUDY](docs/CASE_STUDY.md)
 
 ---
 
