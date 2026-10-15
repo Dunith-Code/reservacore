@@ -1,4 +1,4 @@
-# 🏢 ReservaCore
+# 🏢 ReservaCore: Resource Reservation Management System
 
 [![Live demo](https://img.shields.io/badge/live%20demo-Vercel-000000?logo=vercel&logoColor=white)](<https://reservacore.vercel.app>)
 [![Demo video](https://img.shields.io/badge/demo%20video-watch-FF0000?logo=youtube&logoColor=white)](<VIDEO_LINK>)
