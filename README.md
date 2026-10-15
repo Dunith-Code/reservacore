@@ -16,29 +16,28 @@
 ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
 ![Neon](https://img.shields.io/badge/Neon-Postgres-00E599)
 
-A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles). It replaces informal scheduling with a single source of truth and **guarantees no double-bookings**, even when two people book at the same instant.
+A centralized resource reservation system for shared facilities and equipment (meeting rooms, projectors, vehicles), built as my response to a business scenario rather than a detailed specification. It prevents double-bookings at the database level, even when two people book at the same instant, and gives everyone a clear view of what is available.
 
-- 🌐 **Live app:** [LIVE_URL](https://reservacore.vercel.app) (hosted on Vercel with Neon PostgreSQL; the first load can take a few seconds while the database wakes up)
-- 🎥 **Demo video:** <VIDEO_LINK>
-- 🗂️ **ER diagram (shareable link):** [ER_Diagram](https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing)
-- 📘 **Case study (problem, interpretation, trade-offs):** [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
-- 📐 **UML diagrams (use case, class, sequence, deployment):** [docs/diagrams.md](docs/diagrams.md)
+- 🌐 **Live app:** [reservacore.vercel.app](https://reservacore.vercel.app) (hosted on Vercel with Neon PostgreSQL; the first load can take a few seconds while the database wakes up)
+- 🎥 **Demo video:** <!-- [Google Drive] -->
+- 🗂️ **ER diagram (shareable link):** [ER Diagram](https://drive.google.com/file/d/1JJJgbeoPBem8jQO4fZSwpprrVTElsmxI/view?usp=sharing)
+- 📘 **Case study (problem, interpretation, trade-offs):** [CASE STUDY](docs/CASE_STUDY.md)
+- 📐 **UML diagrams (use case, class, sequence, deployment):** [Diagrams](docs/diagrams.md)
 
 ---
 
-## ✨ Features
+## 🧭 How I approached the business scenario
 
-- 📊 **Dashboard:** total resources, today's bookings, resources free right now, upcoming reservations
-- 🧰 **Resource management:** create, edit, deactivate and reactivate resources (admin only)
-- 🔎 **Search and filters:** resources by name, type and status; reservations by scope, resource, date, status and owner
-- 📅 **Reservations:** book, view upcoming and past bookings, cancel (owner or admin)
-- ✏️ **Reschedule in place:** move a booking to another time without cancelling; the same conflict protection applies
-- 🕒 **Availability timeline:** per-resource day view showing free and booked slots
-- 🚫 **Conflict prevention:** overlapping bookings are rejected by PostgreSQL itself
-- 💡 **Smart alternatives:** when a slot is taken, the app suggests the nearest free slots and other free resources of the same type
-- 🕘 **Booking rules:** bookings run 06:00-22:00 on a single day and last up to 8 hours
-- 🔐 **Authentication and roles:** email and password sign-in, with admin and member permissions enforced on the server
-- 🧪 **Tested and automated:** 31 automated tests, plus a CI pipeline and continuous deployment
+The brief describes a problem, not a specification, so I started by turning its wording into requirements and deciding what to build first.
+
+1. **Understand the symptoms:** scheduling confusion, overlapping reservations, uncertainty about availability
+2. **Translate the brief into requirements:** "organize resources" became a catalogue; "coordinate reservations" a booking lifecycle with owners and permissions; "understand availability" a dashboard and timelines; "remain reliable as activities grow" a correctness requirement under concurrent use
+3. **Prioritise:** core flows first, and the hardest problem first (overlapping bookings under simultaneous requests)
+4. **Decide what to leave out:** self-registration, password reset, email notifications and a calendar view do not change the core problem, so they are listed as next steps
+5. **Build and test the risky parts:** a database-level constraint, plus tests that bypass the application layer and fire simultaneous requests
+6. **Verify, document and be honest about limits:** manual walkthrough, CI, case study, diagrams and a limitations list
+
+Details and trade-offs: [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
 
 ---
 
@@ -58,7 +57,7 @@ Next.js 16 (App Router) · TypeScript · PostgreSQL 16 · Prisma 6 · Tailwind C
 ## 🚀 Getting started
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Dunith-Code/reservacore
 cd reservacore
 npm install
 
@@ -115,6 +114,9 @@ All demo accounts use the password **`Demo@1234`** (demo data only).
 | admin@reservacore.dev | Admin |
 | nimal@reservacore.dev | Member |
 | sara@reservacore.dev | Member |
+||
+
+Seeded reservations are dated relative to the day the seed runs, so create fresh bookings on the **New booking** page if the seeded ones have passed.
 
 ---
 
