@@ -32,7 +32,7 @@ The brief describes a problem, not a specification, so I started by turning its 
 
 1. **Understand the symptoms:** scheduling confusion, overlapping reservations, uncertainty about availability
 2. **Translate the brief into requirements:** "organize resources" became a catalogue; "coordinate reservations" a booking lifecycle with owners and permissions; "understand availability" a dashboard and timelines; "remain reliable as activities grow" a correctness requirement under concurrent use
-3. **Prioritise:** core flows first, and the hardest problem first (overlapping bookings under simultaneous requests)
+3. **Prioritize:** core flows first, and the hardest problem first (overlapping bookings under simultaneous requests)
 4. **Decide what to leave out:** self-registration, password reset, email notifications and a calendar view do not change the core problem, so they are listed as next steps
 5. **Build and test the risky parts:** a database-level constraint, plus tests that bypass the application layer and fire simultaneous requests
 6. **Verify, document and be honest about limits:** manual walkthrough, CI, case study, diagrams and a limitations list
